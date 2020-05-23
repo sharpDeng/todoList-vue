@@ -1,29 +1,107 @@
+/* eslint-disable vue/return-in-computed-property */
 <template>
   <div class="page">
     <!-- 第一步完成框架结构 -->
     <div class="todo-box">
       <header class="todo-hd">
+        <input type="checkbox" v-model="allCompleted" class="checkbox" :value="true"/>
         <label class="toggle-all"></label>
-        <input type="text" class="todo-hd_input"/>
+        <input type="text" class="todo-hd_input" v-model="inputData" @keydown.enter="addTodo"/>
       </header>
       <section class="todo-bd">
         <!-- todo 事项  -->
-        <todo-item></todo-item>
+        <d-item :item="item" v-for="(item, index) in currentTodoList" :key="index" :index="index" @on-delete="deleteHandler"></d-item>
       </section>
-      <div class="todo-ft">
+      <div class="todo-ft" v-show="allTodo.length > 0">
         <div class="todo-left">
-          1 Item Left
+          {{currentTodoList.length}} Item Left
         </div>
         <div class="list-btn">
-          <d-button>All</d-button>
-          <d-button>Active</d-button>
-          <d-button>Completed</d-button>
+          <d-button :active="current == 1" @click="current = 1">All</d-button>
+          <d-button :active="current == 2" @click="current = 2">Active</d-button>
+          <d-button :active="current == 3" @click="current = 3">Completed</d-button>
         </div>
-        <div class="del-all">Clear completed</div>
+        <div class="del-all" @click="allClear">Clear completed</div>
       </div>
     </div>
   </div>
 </template>
+
+<script>
+import DItem from './components/d-item'
+import DButton from './components/d-button'
+let numID = 1
+export default {
+  name: 'todo',
+  components: {
+    DItem, DButton
+  },
+  data () {
+    return {
+      current: 2,
+      allCompleted: false,
+      inputData: '',
+      allTodo: [], // 全部todo列表
+      completedList: [], //  已完成的
+      todoList: [] // 未完成的
+    }
+  },
+  watch: {
+    allCompleted (val) {
+      return this.allTodo.map(item => {
+        item.completed = val
+        return item
+      })
+    }
+  },
+  computed: {
+    // eslint-disable-next-line vue/return-in-computed-property
+    currentTodoList () {
+      // 当前显示列表 data中只需要声明一个allTodo 即可
+      if (this.current === 1) {
+        return this.allTodo
+      } else if (this.current === 2) {
+        return this.allTodo.filter(item => {
+          return !item.completed
+        })
+      } else if (this.current === 3) {
+        return this.allTodo.filter(item => {
+          return item.completed
+        })
+      }
+    }
+    // ,currentTodo2 () {
+    //   // 需要data中声明 completedList 和 todoList 用于存储完成和未完成的任务列表
+    //   if (this.current === 1) {
+    //     return [...this.todoList, ...this.completedList]
+    //   } else if (this.current === 2) {
+    //     return this.todoList
+    //   } else if (this.current === 3) {
+    //     return this.completedList
+    //   }
+    // }
+  },
+  methods: {
+    // 添加 todo 项
+    addTodo () {
+      // 没有输入值时不进行后面操作
+      if (!this.inputData) return
+      this.allTodo.push({ value: this.inputData, completed: false, id: numID++ })
+      // 添加成功后清空input框
+      this.inputData = ''
+    },
+    // 删除项目
+    deleteHandler (val) {
+      this.allTodo = this.allTodo.filter(item => {
+        return item.id !== val.id
+      })
+    },
+    allClear () {
+      this.allTodo = []
+    }
+  }
+}
+</script>
 
 <style lang="less" scoped>
 .page{
@@ -115,6 +193,17 @@
     &:hover{
       text-decoration: underline;
     }
+  }
+}
+
+.checkbox{
+  width: 50px;
+  height: 60px;
+  position: absolute;
+  z-index: 10;
+  opacity: 0;   // 隐藏原有选项框
+  &:checked + .toggle-all::before{
+    color: black;
   }
 }
 
